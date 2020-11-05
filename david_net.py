@@ -15,6 +15,8 @@ from tensorflow.python.ops import math_ops
 from absl import flags
 #from official.utils.flags import core as flags_core
 
+from lars_variant import LARSVariant
+
 
 def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu,
                      poly_power, start_warmup_step, weight_decay_input):
@@ -57,13 +59,19 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu,
   # As report in the Bert pulic github, the learning rate for SQuAD 1.1 is 3e-5,
   # 4e-5 or 5e-5. For LAMB, the users can use 3e-4, 4e-4,or 5e-4 for a batch
   # size of 64 in the finetune.
-  optimizer = LAMBOptimizer(
-      learning_rate=learning_rate,
-      weight_decay_rate=weight_decay_input,
-      beta_1=0.9,
-      beta_2=0.999,
-      epsilon=1e-6,
-      exclude_from_weight_decay=["LayerNorm", "layer_norm", "batch_normalization", "BatchNormalization", "bias"])
+  # optimizer = LAMBOptimizer(
+  #     learning_rate=learning_rate,
+  #     weight_decay_rate=weight_decay_input,
+  #     beta_1=0.9,
+  #     beta_2=0.999,
+  #     epsilon=1e-6,
+  #     exclude_from_weight_decay=["LayerNorm", "layer_norm", "batch_normalization", "BatchNormalization", "bias"])
+
+  optimizer = LARSVariant(
+    learning_rate=learning_rate,
+    norm_beta=0.8,
+    exclude=["LayerNorm", "layer_norm", "batch_normalization", "BatchNormalization", "bias"]
+  )
 
   if use_tpu:
     optimizer = tf.contrib.tpu.CrossShardOptimizer(optimizer)
